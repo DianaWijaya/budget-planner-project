@@ -1,0 +1,44 @@
+{
+  "name": "",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev",
+    "start": "react-router-serve ./build/server/index.js",
+    "typecheck": "react-router typegen && tsc"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.1.0",
+    "@react-router/node": "7.10.1",
+    "@react-router/serve": "7.10.1",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "isbot": "^5.1.31",
+    "jsonwebtoken": "^9.0.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-router": "7.10.1"
+  },
+  "devDependencies": {
+    "@react-router/dev": "7.10.1",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.19.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "nodemon": "^3.1.11",
+    "prisma": "^7.1.0",
+    "tailwindcss": "^4.1.13",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.7",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}
