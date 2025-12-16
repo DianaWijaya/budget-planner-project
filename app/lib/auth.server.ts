@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { prisma } from './prisma.server';
+import prisma from './prisma.server';
 
 interface CreateUserData {
   email: string;
@@ -134,4 +134,19 @@ export async function getUserById(userId: string) {
   });
   
   return user;
+}
+
+/**
+ * FUNCTION 6: Get user by Email
+ * * @param email - The email to search for
+ * @returns User object or null if not found
+ */
+export async function getUserByEmail(email: string) {
+  return prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      email: true,
+    },
+  });
 }
