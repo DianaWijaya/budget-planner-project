@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import prisma from './prisma.server';
+import { prisma } from './prisma.server';
 
 interface CreateUserData {
   email: string;
