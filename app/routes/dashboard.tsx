@@ -1,42 +1,390 @@
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, Form } from "react-router";
-import { requireUserId, getUser } from "~/lib/session.server";
+import { type LoaderFunctionArgs } from 'react-router';
+import { Form, Link, useLoaderData } from 'react-router';
+import { requireUserId } from '~/lib/session.server';
+import { prisma } from '~/lib/prisma.server';
+import { theme, cn } from '~/lib/theme';
+import * as Icons from 'lucide-react';
 
-// This ensures only logged-in users can see this page
+/**
+ * LOADER: Fetch all dashboard data
+ */
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requireUserId(request);
-  const user = await getUser(request);
-  return { user };
+  const userId = await requireUserId(request);
+  
+  // Get current month date range
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  
+  // Fetch transactions for this month
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      userId,
+      date: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+    include: {
+      category: true,
+    },
+    orderBy: {
+      date: 'desc',
+    },
+    take: 10,
+  });
+  
+  // Fetch budgets for this month
+  const budgets = await prisma.budget.findMany({
+    where: {
+      userId,
+      month: now.getMonth() + 1,
+      year: now.getFullYear(),
+    },
+    include: {
+      category: true,
+    },
+  });
+  
+  // Fetch incomes for this month
+  const incomes = await prisma.income.findMany({
+    where: {
+      userId,
+      date: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+    orderBy: {
+      date: 'desc',
+    },
+  });
+  
+  // Get user info
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      email: true,
+    },
+  });
+  
+  // Calculate summary
+  const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
+  const totalExpenses = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+  const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
+  const remainingBudget = totalBudget - totalExpenses;
+  
+  // Calculate spending by category
+  const spendingByCategory = transactions.reduce((acc, tx) => {
+    const categoryId = tx.categoryId;
+    if (!acc[categoryId]) {
+      acc[categoryId] = {
+        category: tx.category,
+        total: 0,
+        count: 0,
+      };
+    }
+    acc[categoryId].total += tx.amount;
+    acc[categoryId].count += 1;
+    return acc;
+  }, {} as Record<string, { category: any; total: number; count: number }>);
+  
+  const topCategories = Object.values(spendingByCategory)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  
+  return {
+    user,
+    transactions,
+    budgets,
+    incomes,
+    summary: {
+      totalIncome,
+      totalExpenses,
+      totalBudget,
+      remainingBudget,
+    },
+    topCategories,
+  };
 }
 
-export default function Dashboard() {
-  const { user } = useLoaderData<typeof loader>();
-
+/**
+ * COMPONENT: Dashboard
+ */
+export default function DashboardPage() {
+  const data = useLoaderData<typeof loader>();
+  
+  const getIcon = (iconName: string | null) => {
+    if (!iconName) return Icons.Tag;
+    const Icon = Icons[iconName as keyof typeof Icons] as any;
+    return Icon || Icons.Tag;
+  };
+  
   return (
-    <div className="p-8 font-sans">
-      <div className="flex justify-between items-center border-b pb-4">
-        <h1 className="text-2xl font-bold">Budget Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-600">{user?.email}</span>
-          <Form action="/logout" method="post">
-            <button className="text-red-500 hover:underline text-sm font-medium">
-              Logout
-            </button>
-          </Form>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation Bar */}
+      <nav className="border-b border-gray-200 bg-white shadow">
+        <div className={theme.layout.container}>
+          <div className="flex h-16 justify-between items-center">
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <svg className="h-8 w-8 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className={cn(theme.typography.h4, "text-brand-600")}>
+                Costally
+              </span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <span className={theme.typography.bodySmall}>{data.user?.email}</span>
+              <Form method="post" action="/logout">
+                <button type="submit" className={theme.components.button.danger}>
+                  Logout
+                </button>
+              </Form>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 bg-blue-50 rounded-lg border border-blue-100">
-          <h3 className="text-sm font-semibold text-blue-800 uppercase tracking-wider">Total Balance</h3>
-          <p className="text-3xl font-bold mt-2">$0.00</p>
+      </nav>
+      
+      {/* Main Content */}
+      <main className={cn(theme.layout.container, theme.layout.section)}>
+        <div className="mb-6">
+          <h2 className={theme.typography.h1}>Dashboard</h2>
+          <p className={theme.typography.bodySmall}>
+            Overview of your finances for {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </p>
         </div>
-        {/* We will add Income/Expense cards here later */}
-      </div>
-
-      <div className="mt-10 p-10 border-2 border-dashed border-gray-200 rounded-xl text-center">
-        <p className="text-gray-500">No transactions yet. Ready to start budgeting?</p>
-      </div>
+        
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+          {/* Total Income */}
+          <div className={theme.components.card.hover}>
+            <div className={theme.layout.card}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={theme.typography.bodySmall}>Total Income</p>
+                <div className="rounded-full bg-green-100 p-2">
+                  <Icons.TrendingUp className="h-5 w-5 text-green-600" />
+                </div>
+              </div>
+              <p className={cn(theme.typography.h2, theme.colors.income.text)}>
+                ${data.summary.totalIncome.toFixed(2)}
+              </p>
+              <p className={theme.typography.bodyTiny}>
+                {data.incomes.length} income sources
+              </p>
+            </div>
+          </div>
+          
+          {/* Total Expenses */}
+          <div className={theme.components.card.hover}>
+            <div className={theme.layout.card}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={theme.typography.bodySmall}>Total Expenses</p>
+                <div className="rounded-full bg-red-100 p-2">
+                  <Icons.TrendingDown className="h-5 w-5 text-red-600" />
+                </div>
+              </div>
+              <p className={cn(theme.typography.h2, theme.colors.expense.text)}>
+                ${data.summary.totalExpenses.toFixed(2)}
+              </p>
+              <p className={theme.typography.bodyTiny}>
+                {data.transactions.length} transactions
+              </p>
+            </div>
+          </div>
+          
+          {/* Total Budget */}
+          <div className={theme.components.card.hover}>
+            <div className={theme.layout.card}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={theme.typography.bodySmall}>Total Budget</p>
+                <div className="rounded-full bg-blue-100 p-2">
+                  <Icons.Target className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+              <p className={cn(theme.typography.h2, 'text-blue-600')}>
+                ${data.summary.totalBudget.toFixed(2)}
+              </p>
+              <p className={theme.typography.bodyTiny}>
+                {data.budgets.length} budgets set
+              </p>
+            </div>
+          </div>
+          
+          {/* Remaining Budget */}
+          <div className={theme.components.card.hover}>
+            <div className={theme.layout.card}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={theme.typography.bodySmall}>Remaining</p>
+                <div className={cn(
+                  "rounded-full p-2",
+                  data.summary.remainingBudget >= 0 ? "bg-green-100" : "bg-red-100"
+                )}>
+                  <Icons.Wallet className={cn(
+                    "h-5 w-5",
+                    data.summary.remainingBudget >= 0 ? "text-green-600" : "text-red-600"
+                  )} />
+                </div>
+              </div>
+              <p className={cn(
+                theme.typography.h2,
+                data.summary.remainingBudget >= 0 ? theme.colors.income.text : theme.colors.expense.text
+              )}>
+                ${Math.abs(data.summary.remainingBudget).toFixed(2)}
+              </p>
+              <p className={theme.typography.bodyTiny}>
+                {data.summary.remainingBudget >= 0 ? 'Under budget' : 'Over budget'}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Top Categories */}
+          <div className={theme.components.card.base}>
+            <div className={theme.layout.card}>
+              <h3 className={cn(theme.typography.h3, 'mb-4')}>
+                Top Spending Categories
+              </h3>
+              {data.topCategories.length === 0 ? (
+                <p className={theme.typography.bodySmall}>No spending data yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {data.topCategories.map((item) => {
+                    const IconComponent = getIcon(item.category.icon);
+                    const percentage = data.summary.totalExpenses > 0
+                      ? (item.total / data.summary.totalExpenses) * 100
+                      : 0;
+                    
+                    return (
+                      <div key={item.category.id}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="flex h-8 w-8 items-center justify-center rounded-lg"
+                              style={{ backgroundColor: `${item.category.color}20` }}
+                            >
+                              <IconComponent
+                                className="h-4 w-4"
+                                style={{ color: item.category.color }}
+                              />
+                            </div>
+                            <span className={theme.typography.bodySmall}>
+                              {item.category.name}
+                            </span>
+                          </div>
+                          <span className={cn(theme.typography.bodySmall, 'font-semibold')}>
+                            ${item.total.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="h-2 rounded-full"
+                            style={{
+                              width: `${percentage}%`,
+                              backgroundColor: item.category.color,
+                            }}
+                          />
+                        </div>
+                        <p className={theme.typography.bodyTiny}>
+                          {item.count} transactions · {percentage.toFixed(0)}% of total
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Recent Transactions */}
+          <div className={theme.components.card.base}>
+            <div className={theme.layout.card}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={theme.typography.h3}>Recent Transactions</h3>
+                <Link
+                  to="/transactions"
+                  className="text-sm text-brand-600 hover:text-brand-700"
+                >
+                  View all →
+                </Link>
+              </div>
+              
+              {data.transactions.length === 0 ? (
+                <div className="text-center py-8">
+                  <Icons.Receipt className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                  <p className={theme.typography.bodySmall}>No transactions yet</p>
+                  <Link
+                    to="/transactions/new"
+                    className={cn(theme.components.button.primary, 'mt-4 inline-flex')}
+                  >
+                    Add Transaction
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {data.transactions.slice(0, 5).map((tx) => {
+                    const IconComponent = getIcon(tx.category.icon);
+                    
+                    return (
+                      <div key={tx.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="flex h-10 w-10 items-center justify-center rounded-lg"
+                            style={{ backgroundColor: `${tx.category.color}20` }}
+                          >
+                            <IconComponent
+                              className="h-5 w-5"
+                              style={{ color: tx.category.color }}
+                            />
+                          </div>
+                          <div>
+                            <p className={theme.typography.bodySmall}>
+                              {tx.description || tx.category.name}
+                            </p>
+                            <p className={theme.typography.bodyTiny}>
+                              {new Date(tx.date).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={cn(theme.typography.bodySmall, 'font-semibold text-red-600')}>
+                          -${tx.amount.toFixed(2)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Link
+            to="/transactions/new"
+            className={cn(theme.components.button.primary, 'text-center py-4')}
+          >
+            <Icons.Plus className="inline h-5 w-5 mr-2" />
+            Add Transaction
+          </Link>
+          <Link
+            to="/budgets"
+            className={cn(theme.components.button.secondary, 'text-center py-4')}
+          >
+            <Icons.Target className="inline h-5 w-5 mr-2" />
+            Manage Budgets
+          </Link>
+          <Link
+            to="/categories"
+            className={cn(theme.components.button.outline, 'text-center py-4')}
+          >
+            <Icons.Tag className="inline h-5 w-5 mr-2" />
+            Categories
+          </Link>
+        </div>
+      </main>
     </div>
   );
 }
