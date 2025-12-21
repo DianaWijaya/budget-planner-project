@@ -1,9 +1,10 @@
 import { redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from 'react-router';
-import { Form, Link, useLoaderData, useActionData, useNavigation } from 'react-router';
+import { Form, Link, useLoaderData, useActionData, useNavigation, useNavigate } from 'react-router';
 import { requireUserId } from '~/lib/session.server';
 import { prisma } from '~/lib/prisma.server';
 import { TRANSACTION_FREQUENCIES } from '~/lib/constants';
 import { theme, cn } from '~/lib/theme';
+import * as Icons from 'lucide-react';
 
 /**
  * LOADER: Get categories for dropdown
@@ -88,6 +89,7 @@ export default function NewTransactionPage() {
   const { categories } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
+  const navigate = useNavigate();
   const isSubmitting = navigation.state === 'submitting';
   
   return (
@@ -96,9 +98,13 @@ export default function NewTransactionPage() {
       <nav className="border-b border-gray-200 bg-white">
         <div className={theme.layout.container}>
           <div className="flex h-16 items-center">
-            <Link to="/transactions" className={cn(theme.typography.h4, "text-brand-600")}>
-              ← Back to Transactions
-            </Link>
+            <button 
+              onClick={() => navigate(-1)}
+              className={cn(theme.typography.h4, "text-brand-600 hover:text-brand-700 flex items-center gap-2")}
+            >
+              <Icons.ArrowLeft className="h-5 w-5" />
+              Back
+            </button>
           </div>
         </div>
       </nav>
@@ -251,12 +257,13 @@ export default function NewTransactionPage() {
                 >
                   {isSubmitting ? 'Adding...' : 'Add Transaction'}
                 </button>
-                <Link
-                  to="/transactions"
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
                   className={theme.components.button.secondary}
                 >
                   Cancel
-                </Link>
+                </button>
               </div>
             </div>
           </Form>
