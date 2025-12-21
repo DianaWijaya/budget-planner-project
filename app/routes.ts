@@ -10,4 +10,5 @@ export default [
   route("categories/new", "routes/categories.new.tsx"),
   route("transactions", "routes/transactions.tsx"),
   route("transactions/new", "routes/transactions.new.tsx"),
+  route("transactions/:id/edit", "routes/transactions.$id.edit.tsx"),
 ] satisfies RouteConfig;
