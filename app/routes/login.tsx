@@ -248,16 +248,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-/**
- * ENHANCED FEATURES:
- * 
- * ✅ Google OAuth Button (placeholder)
- * ✅ "Forgot Password" Link
- * ✅ "Remember Me" Checkbox
- * ✅ Loading State with Spinner
- * ✅ Security Notice Badge
- * ✅ Better Error Handling
- * ✅ Improved UI/UX
- * ✅ Proper Validation Messages
- */

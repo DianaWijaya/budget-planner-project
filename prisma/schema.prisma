@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -19,36 +15,23 @@ model User {
   password  String
   createdAt DateTime @default(now())
 
-  categories   Category[]
   budgets      Budget[]
   transactions Transaction[]
   incomes      Income[]
 }
 
-model Category {
-  id     String @id @default(uuid())
-  name   String
-  color  String?
-  icon   String?
-
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  budgets      Budget[]
-  transactions Transaction[]
-}
-
 model Budget {
-  id         String  @id @default(uuid())
-  amount     Float
+  id         String   @id @default(uuid())
+  amount     Float 
   month      Int
   year       Int
-
-  user       User     @relation(fields: [userId], references: [id])
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
-
-  category   Category @relation(fields: [categoryId], references: [id])
-  categoryId String
+  
+  createdAt  DateTime @default(now())
+  
+  @@unique([userId, month, year], name: "userId_month_year")
 }
 
 model Transaction {
@@ -56,6 +39,8 @@ model Transaction {
   amount      Float
   description String?
   date        DateTime
+  
+  category    String
 
   receiptUrl  String?
   isRecurring Boolean  @default(false)
@@ -63,9 +48,6 @@ model Transaction {
 
   user        User     @relation(fields: [userId], references: [id])
   userId      String
-
-  category    Category @relation(fields: [categoryId], references: [id])
-  categoryId  String
 
   createdAt   DateTime @default(now())
 }

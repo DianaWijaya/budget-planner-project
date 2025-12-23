@@ -330,24 +330,6 @@ export default function SignUp() {
 }
 
 /**
- * WHAT'S NEW:
- * 
- * ✅ Password Confirmation - User must type password twice
- * ✅ Strong Password Validation:
- *    - Minimum 8 characters
- *    - Uppercase letter
- *    - Lowercase letter
- *    - Number
- *    - Special character
- * ✅ Google OAuth Button (placeholder - needs backend setup)
- * ✅ Password Requirements Display
- * ✅ Terms of Service Agreement
- * ✅ Loading State with Spinner
- * ✅ Better Error Messages
- * ✅ Improved UI/UX
- */
-
-/**
  * TO IMPLEMENT GOOGLE OAUTH:
  * 
  * You'll need to:
