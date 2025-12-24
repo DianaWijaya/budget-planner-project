@@ -2,7 +2,7 @@ import { redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from 'reac
 import { Form, Link, useLoaderData, useActionData, useNavigation } from 'react-router';
 import { requireUserId } from '~/lib/session.server';
 import { prisma } from '~/lib/prisma.server';
-import { TRANSACTION_FREQUENCIES } from '~/lib/constants';
+import { TRANSACTION_FREQUENCIES, DEFAULT_CATEGORIES } from '~/lib/constants';
 import { theme, cn } from '~/lib/theme';
 
 /**
@@ -22,20 +22,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       id,
       userId, // Ensure user owns this transaction
     },
-    include: {
-      category: true,
-    },
   });
   
   if (!transaction) {
     throw new Response('Transaction not found', { status: 404 });
   }
   
-  // Fetch categories for dropdown
-  const categories = await prisma.category.findMany({
-    where: { userId },
-    orderBy: { name: 'asc' },
-  });
+  // Use DEFAULT_CATEGORIES from constants
+  const categories = DEFAULT_CATEGORIES;
   
   return { transaction, categories };
 }
@@ -72,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   
   // Handle update
   const amount = formData.get('amount');
-  const categoryId = formData.get('categoryId');
+  const category = formData.get('category');
   const description = formData.get('description');
   const date = formData.get('date');
   const isRecurring = formData.get('isRecurring') === 'on';
@@ -85,8 +79,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     errors.amount = 'Amount must be a positive number';
   }
   
-  if (typeof categoryId !== 'string' || !categoryId) {
-    errors.categoryId = 'Please select a category';
+  if (typeof category !== 'string' || !category) {
+    errors.category = 'Please select a category';
   }
   
   if (typeof date !== 'string' || !date) {
@@ -101,13 +95,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { errors };
   }
   
-  // Verify category belongs to user
-  const category = await prisma.category.findFirst({
-    where: { id: categoryId as string, userId },
-  });
-  
-  if (!category) {
-    return { errors: { categoryId: 'Invalid category' } };
+  // Verify category is valid
+  const isValidCategory = DEFAULT_CATEGORIES.some(c => c.name === category);
+  if (!isValidCategory) {
+    return { errors: { category: 'Invalid category' } };
   }
   
   // Update transaction
@@ -115,7 +106,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     where: { id },
     data: {
       amount: parseFloat(amount as string),
-      categoryId: categoryId as string,
+      category: category as string,
       description: (description as string) || null,
       date: new Date(date as string),
       isRecurring,
@@ -202,26 +193,26 @@ export default function EditTransactionPage() {
               
               {/* Category */}
               <div>
-                <label htmlFor="categoryId" className={theme.typography.label}>
+                <label htmlFor="category" className={theme.typography.label}>
                   Category *
                 </label>
                 <select
-                  id="categoryId"
-                  name="categoryId"
+                  id="category"
+                  name="category"
                   required
-                  defaultValue={transaction.categoryId}
+                  defaultValue={transaction.category}
                   className={theme.components.input.base}
                 >
                   <option value="">Select a category</option>
                   {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
+                    <option key={category.name} value={category.name}>
                       {category.name}
                     </option>
                   ))}
                 </select>
-                {actionData?.errors?.categoryId && (
+                {actionData?.errors?.category && (
                   <p className="mt-1 text-sm text-red-600">
-                    {actionData.errors.categoryId}
+                    {actionData.errors.category}
                   </p>
                 )}
               </div>
