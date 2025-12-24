@@ -11,4 +11,8 @@ export default [
   route("transactions/:id/edit", "routes/transactions.$id.edit.tsx"),
   route("budgets", "routes/budgets.tsx"),
   route("budgets/new", "routes/budgets.new.tsx"),
+  // route("budgets/:id/edit", "routes/budgets.$id.edit.tsx"),
+  route("incomes", "routes/incomes.tsx"),
+  route("incomes/new", "routes/incomes.new.tsx"),
+  // route("incomes/:id/edit", "routes/incomes.$id.edit.tsx"),
 ] satisfies RouteConfig;
