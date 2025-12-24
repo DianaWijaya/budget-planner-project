@@ -1,23 +1,17 @@
 import { redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from 'react-router';
-import { Form, Link, useLoaderData, useActionData, useNavigation, useNavigate } from 'react-router';
+import { Form, useActionData, useNavigation, useNavigate } from 'react-router';
 import { requireUserId } from '~/lib/session.server';
 import { prisma } from '~/lib/prisma.server';
-import { TRANSACTION_FREQUENCIES } from '~/lib/constants';
+import { TRANSACTION_FREQUENCIES, DEFAULT_CATEGORIES } from '~/lib/constants';
 import { theme, cn } from '~/lib/theme';
 import * as Icons from 'lucide-react';
 
 /**
- * LOADER: Get categories for dropdown
+ * LOADER: Just verify user is logged in
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
-  
-  const categories = await prisma.category.findMany({
-    where: { userId },
-    orderBy: { name: 'asc' },
-  });
-  
-  return { categories };
+  await requireUserId(request);
+  return { categories: DEFAULT_CATEGORIES };
 }
 
 /**
@@ -28,7 +22,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   
   const amount = formData.get('amount');
-  const categoryId = formData.get('categoryId');
+  const category = formData.get('category');
   const description = formData.get('description');
   const date = formData.get('date');
   const isRecurring = formData.get('isRecurring') === 'on';
@@ -41,8 +35,8 @@ export async function action({ request }: ActionFunctionArgs) {
     errors.amount = 'Amount must be a positive number';
   }
   
-  if (typeof categoryId !== 'string' || !categoryId) {
-    errors.categoryId = 'Please select a category';
+  if (typeof category !== 'string' || !category) {
+    errors.category = 'Please select a category';
   }
   
   if (typeof date !== 'string' || !date) {
@@ -57,20 +51,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return { errors };
   }
   
-  // Verify category belongs to user
-  const category = await prisma.category.findFirst({
-    where: { id: categoryId as string, userId },
-  });
-  
-  if (!category) {
-    return { errors: { categoryId: 'Invalid category' } };
+  // Verify category is valid
+  const validCategory = DEFAULT_CATEGORIES.find(c => c.name === category);
+  if (!validCategory) {
+    return { errors: { category: 'Invalid category' } };
   }
   
   // Create transaction
   await prisma.transaction.create({
     data: {
       amount: parseFloat(amount as string),
-      categoryId: categoryId as string,
+      category: category as string,
       description: (description as string) || null,
       date: new Date(date as string),
       isRecurring,
@@ -83,10 +74,17 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 /**
+ * Helper to get icon component
+ */
+function getIcon(iconName: string) {
+  const Icon = Icons[iconName as keyof typeof Icons] as any;
+  return Icon || Icons.Tag;
+}
+
+/**
  * COMPONENT: New Transaction Form
  */
 export default function NewTransactionPage() {
-  const { categories } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -153,27 +151,62 @@ export default function NewTransactionPage() {
               
               {/* Category */}
               <div>
-                <label htmlFor="categoryId" className={theme.typography.label}>
+                <label htmlFor="category" className={theme.typography.label}>
                   Category *
                 </label>
                 <select
-                  id="categoryId"
-                  name="categoryId"
+                  id="category"
+                  name="category"
                   required
                   className={theme.components.input.base}
                 >
                   <option value="">Select a category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
+                  {DEFAULT_CATEGORIES.map((category) => {
+                    const IconComponent = getIcon(category.icon);
+                    return (
+                      <option key={category.name} value={category.name}>
+                        {category.name}
+                      </option>
+                    );
+                  })}
                 </select>
-                {actionData?.errors?.categoryId && (
+                {actionData?.errors?.category && (
                   <p className="mt-1 text-sm text-red-600">
-                    {actionData.errors.categoryId}
+                    {actionData.errors.category}
                   </p>
                 )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Choose the category that best fits this expense
+                </p>
+              </div>
+              
+              {/* Category Preview */}
+              <div className="rounded-lg bg-gray-50 p-4">
+                <p className="text-xs font-medium text-gray-700 mb-3">Available Categories:</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {DEFAULT_CATEGORIES.map((cat) => {
+                    const IconComponent = getIcon(cat.icon);
+                    return (
+                      <div
+                        key={cat.name}
+                        className="flex flex-col items-center gap-1"
+                      >
+                        <div
+                          className="flex h-10 w-10 items-center justify-center rounded-lg"
+                          style={{ backgroundColor: `${cat.color}20` }}
+                        >
+                          <IconComponent
+                            className="h-5 w-5"
+                            style={{ color: cat.color }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-700 text-center">
+                          {cat.name}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               
               {/* Description */}
@@ -188,6 +221,9 @@ export default function NewTransactionPage() {
                   placeholder="e.g., Lunch at cafe"
                   className={theme.components.input.base}
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Add details to help you remember this expense
+                </p>
               </div>
               
               {/* Date */}
@@ -212,16 +248,23 @@ export default function NewTransactionPage() {
               
               {/* Recurring */}
               <div className="border-t border-gray-200 pt-6">
-                <div className="flex items-center">
-                  <input
-                    id="isRecurring"
-                    name="isRecurring"
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                  />
-                  <label htmlFor="isRecurring" className="ml-2 block text-sm text-gray-900">
-                    This is a recurring transaction
-                  </label>
+                <div className="flex items-start">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="isRecurring"
+                      name="isRecurring"
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    />
+                  </div>
+                  <div className="ml-3">
+                    <label htmlFor="isRecurring" className="text-sm font-medium text-gray-900">
+                      This is a recurring transaction
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Mark if this expense repeats regularly
+                    </p>
+                  </div>
                 </div>
                 
                 <div className="mt-4" id="frequency-field">
@@ -255,6 +298,7 @@ export default function NewTransactionPage() {
                   disabled={isSubmitting}
                   className={cn(theme.components.button.primary, "flex-1")}
                 >
+                  <Icons.Plus className="h-4 w-4 mr-2 inline" />
                   {isSubmitting ? 'Adding...' : 'Add Transaction'}
                 </button>
                 <button

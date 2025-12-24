@@ -3,6 +3,7 @@ import { Form, Link, useLoaderData, useActionData, useSearchParams } from 'react
 import { requireUserId } from '~/lib/session.server';
 import { prisma } from '~/lib/prisma.server';
 import { theme, cn } from '~/lib/theme';
+import { DEFAULT_CATEGORIES } from '~/lib/constants';
 import * as Icons from 'lucide-react';
 
 /**
@@ -13,15 +14,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   
   // Get filter parameters
-  const categoryId = url.searchParams.get('category');
+  const category = url.searchParams.get('category');
   const month = url.searchParams.get('month');
   const search = url.searchParams.get('search');
   
   // Build where clause
   const where: any = { userId };
   
-  if (categoryId) {
-    where.categoryId = categoryId;
+  if (category) {
+    where.category = category;
   }
   
   if (month) {
@@ -44,24 +45,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Fetch transactions
   const transactions = await prisma.transaction.findMany({
     where,
-    include: {
-      category: true,
-    },
     orderBy: {
       date: 'desc',
     },
   });
   
-  // Fetch categories for filter dropdown
-  const categories = await prisma.category.findMany({
-    where: { userId },
-    orderBy: { name: 'asc' },
-  });
-  
   // Calculate totals
   const total = transactions.reduce((sum, tx) => sum + tx.amount, 0);
   
-  return { transactions, categories, total };
+  return { 
+    transactions, 
+    categories: DEFAULT_CATEGORIES,
+    total 
+  };
 }
 
 /**
@@ -94,6 +90,17 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 /**
+ * Helper to get category config
+ */
+function getCategoryConfig(categoryName: string) {
+  return DEFAULT_CATEGORIES.find(c => c.name === categoryName) || {
+    name: categoryName,
+    color: '#6b7280',
+    icon: 'Tag' as const
+  };
+}
+
+/**
  * COMPONENT: Transactions List
  */
 export default function TransactionsPage() {
@@ -112,14 +119,16 @@ export default function TransactionsPage() {
       <nav className="border-b border-gray-200 bg-white">
         <div className={theme.layout.container}>
           <div className="flex h-16 items-center justify-between">
-            <Link to="/dashboard" className={cn(theme.typography.h4, "text-brand-600")}>
-              ← Back to Dashboard
+            <Link to="/dashboard" className={cn(theme.typography.h4, "text-brand-600 hover:text-brand-700 flex items-center gap-2")}>
+              <Icons.ArrowLeft className="h-5 w-5" />
+              Back to Dashboard
             </Link>
             <Link
               to="/transactions/new"
               className={theme.components.button.primary}
             >
-              + New Transaction
+              <Icons.Plus className="h-4 w-4 mr-2 inline" />
+              New Transaction
             </Link>
           </div>
         </div>
@@ -137,13 +146,19 @@ export default function TransactionsPage() {
         {/* Messages */}
         {actionData?.success && (
           <div className="mb-6 rounded-lg bg-green-50 border border-green-200 p-4">
-            <p className="text-sm text-green-800">{actionData.success}</p>
+            <div className="flex items-center gap-2">
+              <Icons.CheckCircle className="h-5 w-5 text-green-600" />
+              <p className="text-sm text-green-800">{actionData.success}</p>
+            </div>
           </div>
         )}
         
         {actionData?.error && (
           <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-            <p className="text-sm text-red-800">{actionData.error}</p>
+            <div className="flex items-center gap-2">
+              <Icons.AlertCircle className="h-5 w-5 text-red-600" />
+              <p className="text-sm text-red-800">{actionData.error}</p>
+            </div>
           </div>
         )}
         
@@ -164,7 +179,7 @@ export default function TransactionsPage() {
                 >
                   <option value="">All Categories</option>
                   {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
+                    <option key={cat.name} value={cat.name}>
                       {cat.name}
                     </option>
                   ))}
@@ -203,6 +218,7 @@ export default function TransactionsPage() {
               {/* Buttons */}
               <div className="flex items-end gap-2">
                 <button type="submit" className={theme.components.button.primary}>
+                  <Icons.Search className="h-4 w-4 mr-1 inline" />
                   Apply
                 </button>
                 <Link to="/transactions" className={theme.components.button.secondary}>
@@ -217,11 +233,17 @@ export default function TransactionsPage() {
         <div className={cn(theme.components.card.base, "mb-6")}>
           <div className={theme.layout.card}>
             <div className="flex items-center justify-between">
-              <span className={theme.typography.body}>Total Expenses</span>
+              <div className="flex items-center gap-2">
+                <Icons.Calculator className="h-5 w-5 text-gray-600" />
+                <span className={theme.typography.body}>Total Expenses</span>
+              </div>
               <span className={cn(theme.typography.h2, theme.colors.expense.text)}>
                 ${total.toFixed(2)}
               </span>
             </div>
+            <p className={theme.typography.bodyTiny}>
+              {transactions.length} {transactions.length === 1 ? 'transaction' : 'transactions'}
+            </p>
           </div>
         </div>
         
@@ -229,82 +251,111 @@ export default function TransactionsPage() {
         {transactions.length === 0 ? (
           <div className={cn(theme.components.card.base, "text-center py-12")}>
             <Icons.Receipt className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className={cn(theme.typography.h3, "mt-4")}>No transactions yet</h3>
+            <h3 className={cn(theme.typography.h3, "mt-4")}>No transactions found</h3>
             <p className={cn(theme.typography.bodySmall, "mt-2")}>
-              Start tracking your expenses by adding your first transaction
+              {searchParams.get('category') || searchParams.get('month') || searchParams.get('search')
+                ? 'Try adjusting your filters or clear them to see all transactions'
+                : 'Start tracking your expenses by adding your first transaction'}
             </p>
-            <Link
-              to="/transactions/new"
-              className={cn(theme.components.button.primary, "mt-6 inline-flex")}
-            >
-              Add Transaction
-            </Link>
+            <div className="flex gap-3 justify-center mt-6">
+              {(searchParams.get('category') || searchParams.get('month') || searchParams.get('search')) && (
+                <Link
+                  to="/transactions"
+                  className={theme.components.button.secondary}
+                >
+                  Clear Filters
+                </Link>
+              )}
+              <Link
+                to="/transactions/new"
+                className={theme.components.button.primary}
+              >
+                <Icons.Plus className="h-4 w-4 mr-2 inline" />
+                Add Transaction
+              </Link>
+            </div>
           </div>
         ) : (
           <div className={theme.components.card.base}>
-            <div className="overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Description
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {transactions.map((transaction) => {
-                    const IconComponent = getIcon(transaction.category.icon || 'Tag');
+                    const categoryConfig = getCategoryConfig(transaction.category);
+                    const IconComponent = getIcon(categoryConfig.icon);
                     
                     return (
-                      <tr key={transaction.id} className="hover:bg-gray-50">
+                      <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(transaction.date).toLocaleDateString()}
+                          {new Date(transaction.date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <div
                               className="flex h-8 w-8 items-center justify-center rounded-lg"
-                              style={{ backgroundColor: `${transaction.category.color}20` }}
+                              style={{ backgroundColor: `${categoryConfig.color}20` }}
                             >
                               <IconComponent
                                 className="h-4 w-4"
-                                style={{ color: transaction.category.color }}
+                                style={{ color: categoryConfig.color }}
                               />
                             </div>
                             <span className="text-sm text-gray-900">
-                              {transaction.category.name}
+                              {transaction.category}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {transaction.description || '-'}
-                          {transaction.isRecurring && (
-                            <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                              Recurring
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <span>{transaction.description || '-'}</span>
+                            {transaction.isRecurring && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                                <Icons.Repeat className="h-3 w-3" />
+                                {transaction.frequency}
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-red-600">
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-red-600">
                           ${transaction.amount.toFixed(2)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-3">
+                            <Link
+                              to={`/transactions/${transaction.id}`}
+                              className="text-brand-600 hover:text-brand-900 flex items-center gap-1"
+                            >
+                              <Icons.Eye className="h-4 w-4" />
+                              View
+                            </Link>
                             <Link
                               to={`/transactions/${transaction.id}/edit`}
-                              className="text-brand-600 hover:text-brand-900"
+                              className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
                             >
+                              <Icons.Edit2 className="h-4 w-4" />
                               Edit
                             </Link>
                             <Form method="post" className="inline">
@@ -312,13 +363,14 @@ export default function TransactionsPage() {
                               <input type="hidden" name="transactionId" value={transaction.id} />
                               <button
                                 type="submit"
-                                className="text-red-600 hover:text-red-900"
+                                className="text-red-600 hover:text-red-900 flex items-center gap-1"
                                 onClick={(e) => {
-                                  if (!confirm('Delete this transaction?')) {
+                                  if (!confirm('Delete this transaction? This cannot be undone.')) {
                                     e.preventDefault();
                                   }
                                 }}
                               >
+                                <Icons.Trash2 className="h-4 w-4" />
                                 Delete
                               </button>
                             </Form>
