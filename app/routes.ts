@@ -13,8 +13,6 @@ export default [
   route("transactions/:id/edit", "routes/transaction/transactions.$id.edit.tsx"),
 
   route("budgets", "routes/budget/budgets.tsx"),
-  route("budgets/new", "routes/budget/budgets.new.tsx"),
-  // route("budgets/:id/edit", "routes/budget/budgets.$id.edit.tsx"),
 
   route("incomes", "routes/income/incomes.tsx"),
   route("incomes/new", "routes/income/incomes.new.tsx"),
