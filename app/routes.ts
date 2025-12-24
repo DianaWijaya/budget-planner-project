@@ -2,17 +2,21 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
   index("routes/home.tsx"),
-  route("login", "routes/login.tsx"),
-  route("signup", "routes/signup.tsx"),
-  route("logout", "routes/logout.tsx"),
+  route("login", "routes/authentication/login.tsx"),
+  route("signup", "routes/authentication/signup.tsx"),
+  route("logout", "routes/authentication/logout.tsx"),
+
   route("dashboard", "routes/dashboard.tsx"),
-  route("transactions", "routes/transactions.tsx"),
-  route("transactions/new", "routes/transactions.new.tsx"),
-  route("transactions/:id/edit", "routes/transactions.$id.edit.tsx"),
-  route("budgets", "routes/budgets.tsx"),
-  route("budgets/new", "routes/budgets.new.tsx"),
-  // route("budgets/:id/edit", "routes/budgets.$id.edit.tsx"),
-  route("incomes", "routes/incomes.tsx"),
-  route("incomes/new", "routes/incomes.new.tsx"),
-  // route("incomes/:id/edit", "routes/incomes.$id.edit.tsx"),
+
+  route("transactions", "routes/transaction/transactions.tsx"),
+  route("transactions/new", "routes/transaction/transactions.new.tsx"),
+  route("transactions/:id/edit", "routes/transaction/transactions.$id.edit.tsx"),
+
+  route("budgets", "routes/budget/budgets.tsx"),
+  route("budgets/new", "routes/budget/budgets.new.tsx"),
+  // route("budgets/:id/edit", "routes/budget/budgets.$id.edit.tsx"),
+
+  route("incomes", "routes/income/incomes.tsx"),
+  route("incomes/new", "routes/income/incomes.new.tsx"),
+  // route("incomes/:id/edit", "routes/income/incomes.$id.edit.tsx"),
 ] satisfies RouteConfig;
