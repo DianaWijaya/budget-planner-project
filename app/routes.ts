@@ -11,6 +11,7 @@ export default [
   route("transactions", "routes/transaction/transactions.tsx"),
   route("transactions/new", "routes/transaction/transactions.new.tsx"),
   route("transactions/:id/edit", "routes/transaction/transactions.$id.edit.tsx"),
+  route("transactions/:id", "routes/transaction/transactions.$id.tsx"),
 
   route("budgets", "routes/budget/budgets.tsx"),
 
