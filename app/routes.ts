@@ -17,5 +17,5 @@ export default [
 
   route("incomes", "routes/income/incomes.tsx"),
   route("incomes/new", "routes/income/incomes.new.tsx"),
-  // route("incomes/:id/edit", "routes/income/incomes.$id.edit.tsx"),
+  route("incomes/:id/edit", "routes/income/incomes.$id.edit.tsx"),
 ] satisfies RouteConfig;
