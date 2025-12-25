@@ -1,7 +1,4 @@
-// app/lib/theme.ts
-
 export const theme = {
-  // Color Classes (Tailwind)
   colors: {
     // Primary brand color (buttons, links, etc.)
     primary: {

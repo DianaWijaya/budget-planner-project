@@ -1,5 +1,3 @@
-// app/routes/login.tsx
-
 import { redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from 'react-router';
 import { Form, Link, useActionData, useSearchParams, useNavigation } from 'react-router';
 import { verifyLogin } from '~/lib/auth.server';

@@ -1,5 +1,3 @@
-// app/routes/register.tsx
-
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Form, Link, redirect, useActionData, useNavigation } from "react-router";
 import { createUserSession, getUserId } from "~/lib/session.server";

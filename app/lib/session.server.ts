@@ -1,5 +1,3 @@
-// app/lib/session.server.ts
-
 import { createCookieSessionStorage, redirect } from 'react-router';
 import { getUserById } from './auth.server';
 
