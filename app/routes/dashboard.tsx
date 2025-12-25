@@ -205,6 +205,13 @@ export default function DashboardPage() {
               <Icons.DollarSign className="inline h-4 w-4 mr-2" />
               Income
             </Link>
+            <Link
+              to="/analytics"
+              className={theme.components.button.secondary}
+            >
+              <Icons.BarChart3 className="inline h-4 w-4 mr-2" />
+              Analytics
+            </Link>
           </div>
         </div>
         
@@ -477,9 +484,11 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        
         
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <Link
             to="/transactions"
             className={cn(theme.components.button.outline, 'text-center py-4')}
@@ -500,6 +509,13 @@ export default function DashboardPage() {
           >
             <Icons.Target className="inline h-5 w-5 mr-2" />
             Budget
+          </Link>
+          <Link
+            to="/analytics"
+            className={cn(theme.components.button.outline, 'text-center py-4')}
+          >
+            <Icons.BarChart3 className="inline h-5 w-5 mr-2" />
+            Analytics
           </Link>
         </div>
       </main>
