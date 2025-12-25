@@ -4,6 +4,7 @@ import { requireUserId } from '~/lib/session.server';
 import { prisma } from '~/lib/prisma.server';
 import { theme, cn } from '~/lib/theme';
 import { DEFAULT_CATEGORIES } from '~/lib/constants';
+import { Chatbot } from '~/components/Chatbot';
 import * as Icons from 'lucide-react';
 
 /**
@@ -502,6 +503,7 @@ export default function DashboardPage() {
           </Link>
         </div>
       </main>
+      <Chatbot />
     </div>
   );
 }
