@@ -1,87 +1,169 @@
-# Welcome to React Router!
+# Costally - Personal Finance Tracker
 
-A modern, production-ready template for building full-stack React applications using React Router.
+<p align="center">
+  <img src="public/logo.png" alt="Costally Logo" width="150">
+</p>
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+**An intelligent personal finance platform featuring AI-powered budget assistance, automated expense tracking, and real-time financial insights.**
+
+🔗 **Live Demo:** [costally.vercel.app](https://costally.vercel.app)
+
+---
+
+## Table of Contents
+
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Installation](#-installation)
+- [Database Setup](#-database-setup)
+- [Running the Application](#-running-the-application)
+
+---
 
 ## Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+### **Financial Management**
+- Track income from multiple sources
+- Monitor expenses by category
+- Set and manage monthly budgets
+- Real-time budget progress tracking
+- Category-based spending analysis
 
-## Getting Started
+### **AI-Powered Assistant**
+- Google Gemini AI chatbot for personalized financial advice
+- Real-time spending pattern analysis
+- Budget recommendations based on your data
+- Natural language queries about your finances
 
-### Installation
+### **Dashboard & Analytics**
+- Interactive financial dashboard
+- Visual spending breakdowns by category
+- Monthly income vs expenses comparison
 
-Install the dependencies:
+### **Transaction Management**
+- Add, edit, and delete transactions
+- Recurring transaction support
+- Multiple frequency options (daily, weekly, monthly)
+- Transaction categorization
+- Search and filter capabilities
 
+---
+
+## Tech Stack
+
+### **Frontend**
+- **React Router v7** - Full-stack React framework
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **Lucide React** - Beautiful icon library
+
+### **Backend**
+- **Node.js** - JavaScript runtime
+- **Prisma ORM** - Database toolkit
+- **PostgreSQL** - Relational database
+- **Vite** - Build tool and dev server
+
+### **AI Integration**
+- **Google Gemini AI** - Generative AI for chatbot
+- **@google/generative-ai** - Official Gemini SDK
+
+### **Deployment**
+- **Vercel** - Platform for deployment
+
+---
+
+## Installation
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/DianaWijaya/budget-planner-project.git
+cd budget-planner-project
+```
+
+2. **Install dependencies**
 ```bash
 npm install
 ```
 
-### Development
+3. **Configure your `.env` file**
 
-Start the development server with HMR:
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/costally"
+
+# Google Gemini AI
+GEMINI_API_KEY="your_gemini_api_key_here"
+
+# Session Secret (generate a random string)
+SESSION_SECRET="your_random_session_secret_here"
+```
+
+### How to Get API Keys:
+
+**Google Gemini API Key:**
+1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the key and paste it in `.env`
+
+**PostgreSQL Database:**
+- **Local:** Install PostgreSQL locally
+- **Cloud:** Use [Supabase](https://supabase.com/) or [Railway](https://railway.app/) (free tier available)
+
+---
+
+## Database Setup
+
+1. **Run Prisma migrations**
+```bash
+npx prisma migrate dev
+```
+
+2. **Generate Prisma Client**
+```bash
+npx prisma generate
+```
+
+3. **Seed the database (optional)**
+```bash
+npx prisma db seed
+```
+
+4. **View your database in Prisma Studio**
+```bash
+npx prisma studio
+```
+
+### Database Schema
+
+The application uses the following models:
+- **User** - User accounts and authentication
+- **Budget** - Monthly budget allocations
+- **Transaction** - Expense tracking with categories
+- **Income** - Income source tracking
+
+---
+
+## Running the Application
+
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
+The app will be available at `http://localhost:5173`
 
-## Building for Production
-
-Create a production build:
+### Build for Production
 
 ```bash
 npm run build
 ```
 
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
+### Start Production Server
 
 ```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
+npm start
 ```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
