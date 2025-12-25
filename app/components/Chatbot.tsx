@@ -124,8 +124,8 @@ export function Chatbot() {
                   <span className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-400 rounded-full border-2 border-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Budget Assistant</h3>
-                  <p className="text-xs text-blue-100">Powered by Gemini AI</p>
+                  <h3 className="font-semibold">Your Personal Budget Assistant</h3>
+                  <p className="text-xs text-blue-100">Gemini AI</p>
                 </div>
               </div>
               <button

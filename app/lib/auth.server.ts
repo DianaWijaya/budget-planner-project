@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from './prisma.server';
-import { DEFAULT_CATEGORIES } from './constants';
 
 interface CreateUserData {
   email: string;
@@ -49,24 +48,9 @@ export async function verifyPassword(
 }
 
 /**
- * Seed default categories for a user
- */
-export async function seedDefaultCategories(userId: string) {
-  const categories = DEFAULT_CATEGORIES.map(cat => ({
-    name: cat.name,
-    color: cat.color,
-    icon: cat.icon,
-    userId,
-  }));
-
-  await prisma.category.createMany({
-    data: categories,
-    skipDuplicates: true,
-  });
-}
-
-/**
- * Create a new user with default categories
+ * Create a new user
+ * Note: Categories are now preset and handled on the frontend,
+ * no need to seed them in the database
  */
 export async function createUser({ 
   email, 
@@ -83,35 +67,20 @@ export async function createUser({
 
   const hashedPassword = await hashPassword(password);
   
-  // Use transaction to ensure atomicity
-  return prisma.$transaction(async (tx) => {
-    // Create user
-    const user = await tx.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        email: true,
-        createdAt: true,
-      },
-    });
-
-    // Seed default categories
-    const categories = DEFAULT_CATEGORIES.map(cat => ({
-      name: cat.name,
-      color: cat.color,
-      icon: cat.icon,
-      userId: user.id,
-    }));
-
-    await tx.category.createMany({
-      data: categories,
-    });
-    
-    return user;
+  // Create user
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+    },
+    select: {
+      id: true,
+      email: true,
+      createdAt: true,
+    },
   });
+  
+  return user;
 }
 
 /**
