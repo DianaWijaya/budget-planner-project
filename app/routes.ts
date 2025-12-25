@@ -20,4 +20,6 @@ export default [
   route("incomes/:id/edit", "routes/income/incomes.$id.edit.tsx"),
 
   route("api/chat", "routes/chatbot/api.chat.ts"),
+
+  route("analytics", "routes/analytic/analytics.tsx"),
 ] satisfies RouteConfig;
