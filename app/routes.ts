@@ -8,6 +8,9 @@ export default [
 
   route("dashboard", "routes/dashboard.tsx"),
 
+  route("privacy", "routes/privacy/privacy.tsx"),
+  route("terms", "routes/privacy/terms.tsx"),
+
   route("transactions", "routes/transaction/transactions.tsx"),
   route("transactions/new", "routes/transaction/transactions.new.tsx"),
   route("transactions/:id/edit", "routes/transaction/transactions.$id.edit.tsx"),
