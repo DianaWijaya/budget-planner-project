@@ -5,10 +5,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "react-router";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import type { Route } from "./+types/root";
-import "./app.css"; // Keep only one import
+import "./app.css";
 
 export const links: Route.LinksFunction = () => [
   {
@@ -26,7 +28,16 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+export function loader() {
+  return {
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  };
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  // 👇 ADD THIS to get the Google Client ID
+  const data = useLoaderData<typeof loader>();
+  
   return (
     <html lang="en" className="h-full">
       <head>
@@ -37,7 +48,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body className="h-full font-sans bg-gray-50 text-gray-900">
-        {children}
+        <GoogleOAuthProvider clientId={data.googleClientId}>
+          {children}
+        </GoogleOAuthProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
